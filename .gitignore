@@ -208,3 +208,8 @@ __marimo__/
 
 # Project docs (plans, specs)
 docs/
+.claude/
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+
