@@ -49,7 +49,7 @@ jobs:
           # Format date for GitHub search (YYYY-MM-DD)
           TAG_DATE_FORMATTED=$(date -d "$TAG_DATE" +%Y-%m-%d)
           echo "Tag date: $TAG_DATE_FORMATTED"
-          PRS=$(gh pr list --state merged --limit 1000 --json number,title,labels,author --search "merged:>=${TAG_DATE_FORMATTED}")
+          PRS=$(gh pr list --state merged --limit 1000 --json number,title,labels,author,mergedAt --search "merged:>=${TAG_DATE_FORMATTED}" | jq 'sort_by(.mergedAt)')
           echo "prs<<EOF" >> $GITHUB_OUTPUT
           echo "$PRS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
