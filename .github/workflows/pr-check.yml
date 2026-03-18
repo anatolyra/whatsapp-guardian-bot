@@ -1,0 +1,33 @@
+name: PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled]
+    branches: [main]
+
+jobs:
+  check-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for version bump label
+        run: |
+          LABELS='${{ toJson(github.event.pull_request.labels) }}'
+          
+          COUNT=0
+          for LABEL in major minor patch; do
+            if echo "$LABELS" | jq -e ".[] | select(.name == \"$LABEL\")" > /dev/null 2>&1; then
+              COUNT=$((COUNT + 1))
+            fi
+          done
+          
+          if [ $COUNT -eq 0 ]; then
+            echo "::error::PR must have exactly one of these labels: major, minor, or patch"
+            exit 1
+          fi
+          
+          if [ $COUNT -gt 1 ]; then
+            echo "::error::PR must have exactly ONE version bump label, not multiple"
+            exit 1
+          fi
+          
+          echo "✅ PR has valid version bump label"
