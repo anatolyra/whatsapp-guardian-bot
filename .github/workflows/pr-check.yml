@@ -5,11 +5,12 @@ on:
     types: [opened, synchronize, labeled, unlabeled]
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   check-label:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Check for version bump label
         run: |
