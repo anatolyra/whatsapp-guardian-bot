@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: guardian-waha
+    restart: unless-stopped
+    environment:
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      - WAHA_WEBHOOKS_URL=http://guardian-bot:5000/webhook
+      - WAHA_WEBHOOKS_EVENTS=message.any
+    volumes:
+      - ./waha-data:/app/.waha
+    ports:
+      - "3000:3000"
+    networks:
+      - guardian_net
+
+  guardian-bot:
+    image: ghcr.io/YOUR_GITHUB_USERNAME/whatsapp-guardian-bot:latest
+    container_name: guardian-bot
+    restart: unless-stopped
+    environment:
+      - LLM_PROVIDER=ollama
+      - LLM_BASE_URL=http://192.168.50.212:11434/v1
+      - LLM_MODEL_NAME=llama3.2
+      - LLM_API_KEY=optional_key_here
+      - TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+      - TELEGRAM_CHAT_ID=your_telegram_chat_id
+      - FAILURE_NOTIFY_ENABLED=true
+      - FAILURE_NOTIFY_FIRST=true
+      - FAILURE_NOTIFY_INTERVAL=3
+    networks:
+      - guardian_net
+    depends_on:
+      - waha
+
+networks:
+  guardian_net:
+    driver: bridge
