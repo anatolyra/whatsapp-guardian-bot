@@ -55,7 +55,55 @@ The stack consists of two containers:
 
 ### 3. Deploy with Docker Compose
 
-Create `docker-compose.yml` (see `examples/docker-compose.yml`) and run:
+Create `docker-compose.yml`:
+
+```yaml
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: guardian-waha
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    environment:
+      - WHATSAPP_HOOK_URL=http://guardian-bot:5000/webhook
+      - WHATSAPP_HOOK_EVENTS=message.any
+    volumes:
+      - waha-data:/app/.waha
+  guardian-bot:
+    image: ghcr.io/anatolyra/whatsapp-guardian-bot:latest
+    container_name: guardian-bot
+    restart: unless-stopped
+    ports:
+      - "5005:5000"
+    env_file:
+      - .env
+    depends_on:
+      - waha
+volumes:
+  waha-data:
+```
+
+Create `.env`:
+
+```env
+# LLM Configuration
+LLM_PROVIDER=ollama
+LLM_BASE_URL=https://<LLM_URL_BASE>/api
+LLM_MODEL_NAME=qwen2.5:3b
+LLM_API_KEY=<YOUR_API_KEY>
+
+# Telegram Configuration
+TELEGRAM_BOT_TOKEN=<BOT_TOKEN>
+TELEGRAM_CHAT_ID=<CHAT_ID>
+
+# Failure Notification Settings
+FAILURE_NOTIFY_ENABLED=true
+FAILURE_NOTIFY_FIRST=true
+FAILURE_NOTIFY_INTERVAL=3
+```
+
+Then run:
 
 ```bash
 docker compose up -d
