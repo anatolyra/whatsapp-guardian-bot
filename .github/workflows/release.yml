@@ -116,11 +116,11 @@ jobs:
           echo "To actually release, run again without dry-run."
           exit 0
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.14
         if: ${{ github.event.inputs.dry-run != 'true' }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install dependencies
         if: ${{ github.event.inputs.dry-run != 'true' }}
