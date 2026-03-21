@@ -64,29 +64,47 @@ services:
     container_name: guardian-waha
     restart: unless-stopped
     ports:
-      - "3003:3000"
+      - 3003:3000
     environment:
       - WHATSAPP_HOOK_URL=http://guardian-bot:5000/webhook
       - WHATSAPP_HOOK_EVENTS=message.any
+      # --- WAHA Security Definitions ---
+      - WAHA_DASHBOARD_USERNAME=admin
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WHATSAPP_SWAGGER_USERNAME=admin
+      - WHATSAPP_SWAGGER_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WAHA_API_KEY=${WAHA_API_KEY}
     volumes:
       - waha-data:/app/.waha
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "curl -s -f -H 'X-Api-Key: ${WAHA_API_KEY}' http://[::1]:3000/api/server/status || curl -s -f -H 'X-Api-Key: ${WAHA_API_KEY}' http://127.0.0.1:3000/api/server/status || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
   guardian-bot:
     image: ghcr.io/anatolyra/whatsapp-guardian-bot:latest
     container_name: guardian-bot
     restart: unless-stopped
     ports:
-      - "5005:5000"
+      - 5005:5000
     env_file:
       - .env
     depends_on:
       - waha
 volumes:
   waha-data:
+networks: {}
 ```
 
 Create `.env`:
 
 ```env
+# WAHA Security
+WAHA_DASHBOARD_PASSWORD=<SECURE_PASSWORD>
+WAHA_API_KEY=<YOUR_API_KEY>
+
 # LLM Configuration
 LLM_PROVIDER=ollama
 LLM_BASE_URL=https://<LLM_URL_BASE>/api
