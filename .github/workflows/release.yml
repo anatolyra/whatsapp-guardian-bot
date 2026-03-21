@@ -42,16 +42,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           LAST_TAG=${{ steps.latest-tag.outputs.tag }}
-          # Get the commit date of the last tag
-          TAG_DATE=$(git log -1 --format=%ci $LAST_TAG 2>/dev/null || echo "")
-          if [ -z "$TAG_DATE" ]; then
+          TAG_DATE_ISO=$(git log -1 --format=%ci $LAST_TAG 2>/dev/null || echo "")
+          if [ -z "$TAG_DATE_ISO" ]; then
             echo "::error::Could not get date for tag $LAST_TAG"
             exit 1
           fi
-          # Format date for GitHub search (YYYY-MM-DD)
-          TAG_DATE_FORMATTED=$(date -d "$TAG_DATE" +%Y-%m-%d)
-          echo "Tag date: $TAG_DATE_FORMATTED"
-          PRS=$(gh pr list --state merged --limit 1000 --json number,title,labels,author,mergedAt --search "merged:>=${TAG_DATE_FORMATTED}" | jq 'sort_by(.mergedAt)')
+          TAG_TIMESTAMP=$(date -d "$TAG_DATE_ISO" -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "Tag timestamp: $TAG_TIMESTAMP"
+          PRS=$(gh pr list --state merged --limit 1000 --json number,title,labels,author,mergedAt --search "merged:>${TAG_TIMESTAMP}" | jq 'sort_by(.mergedAt)')
           echo "prs<<EOF" >> $GITHUB_OUTPUT
           echo "$PRS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
