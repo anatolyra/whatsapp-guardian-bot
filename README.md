@@ -14,11 +14,11 @@ An open-source, self-hosted, privacy-first parental control bot. It connects to 
 
 ```
 ┌─────────────────┐     webhook      ┌─────────────────┐
-│  WhatsApp       │ ──────────────► │  Guardian Bot   │
+│  WhatsApp       │ ──────────────►  │  Guardian Bot   │
 │  (child device) │                  │  (Python/Flask) │
 │                 │                  │                 │
-│  WAHA Container │                  │  - LLM Analysis│
-│  (whatsapp-web) │                  │  - Telegram API│
+│  WAHA Container │                  │  - LLM Analysis │
+│  (whatsapp-web) │                  │  - Telegram API │
 └─────────────────┘                  └────────┬────────┘
                                               │
                     ┌─────────────────────────┤
