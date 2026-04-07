@@ -1,5 +1,5 @@
-import os
 import logging
+from typing import Optional, Dict
 from flask import Flask, request, jsonify
 from datetime import datetime, timezone
 from config import Config
@@ -20,6 +20,67 @@ failure_tracker = FailureTracker(
 )
 telegram = TelegramSender(config.telegram_bot_token, config.telegram_chat_id) if config.telegram_bot_token and config.telegram_chat_id else None
 
+
+def extract_sender_info(payload: dict) -> Dict[str, Optional[str]]:
+    """
+    Extract sender information from WAHA webhook payload.
+
+    Args:
+        payload: The webhook payload dict from WAHA
+
+    Returns:
+        Dict with sender_name, sender_phone, group_name, and is_group fields
+    """
+    data = payload.get("_data", {}) or {}
+    from_id = payload.get("from", "") or ""
+
+    is_group = from_id.endswith("@g.us")
+    sender_id = payload.get("participant") if is_group else from_id
+    sender_phone = _extract_phone(sender_id)
+
+    push_name = data.get("pushName")
+    notify_name = data.get("notify")
+
+    if push_name and push_name != "~":
+        sender_name = push_name
+    elif notify_name and notify_name != "~":
+        sender_name = notify_name
+    else:
+        sender_name = None
+
+    group_name = None
+    if is_group:
+        metadata = data.get("metadata", {}) or {}
+        group_name = metadata.get("subject") or data.get("subject")
+
+    return {
+        "sender_name": sender_name,
+        "sender_phone": sender_phone,
+        "group_name": group_name,
+        "is_group": is_group
+    }
+
+
+def _extract_phone(sender_id: Optional[str]) -> str:
+    """
+    Extract phone number from WhatsApp ID format.
+
+    Args:
+        sender_id: WhatsApp ID in format '1234567890@c.us' or '1234567890@lid'
+
+    Returns:
+        Phone number with + prefix, or 'unknown' if invalid
+    """
+    if not sender_id or sender_id == "unknown":
+        return "unknown"
+    
+    phone = sender_id.split("@")[0]
+    if not phone:
+        return "unknown"
+    
+    return f"+{phone}"
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
@@ -28,26 +89,26 @@ def webhook():
         return jsonify({"status": "ignored"}), 200
 
     payload = data["payload"]
-    sender = payload.get("from", "unknown")
     message_text = payload.get("body", "")
     from_me = payload.get("fromMe", False)
     direction = "outgoing" if from_me else "incoming"
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    sender_info = extract_sender_info(payload)
 
     try:
         is_unsafe, reason = llm_client.analyze(message_text)
 
         if is_unsafe and telegram and config.failure_notify_enabled:
-            telegram.send_unsafe_alert(
+            telegram.send_safety_alert(
                 direction=direction,
-                sender=sender,
+                sender_info=sender_info,
                 timestamp=timestamp,
                 message=message_text[:200],
                 reason=reason,
             )
 
         failure_tracker.record_success()
-        logger.info(f"Message analyzed: {direction} from {sender}, verdict: {'unsafe' if is_unsafe else 'safe'}")
+        logger.info(f"Message analyzed: {direction} from {sender_info.get('sender_phone', 'unknown')}, verdict: {'unsafe' if is_unsafe else 'safe'}")
 
     except Exception as e:
         logger.error(f"LLM analysis failed: {e}")
