@@ -24,12 +24,12 @@ If safe, return {"unsafe": false, "reason": "none"}."""
         self.api_key = api_key
         self.model = model
         self.provider = provider
+        self._session = requests.Session()
+        self._session.headers["Content-Type"] = "application/json"
+        if api_key:
+            self._session.headers["Authorization"] = f"Bearer {api_key}"
 
     def analyze(self, text: str) -> Tuple[bool, str]:
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-
         payload = {
             "model": self.model,
             "messages": [
@@ -40,9 +40,8 @@ If safe, return {"unsafe": false, "reason": "none"}."""
             "temperature": 0.0,
         }
 
-        response = requests.post(
+        response = self._session.post(
             f"{self.base_url}/chat/completions",
-            headers=headers,
             json=payload,
             timeout=30,
         )

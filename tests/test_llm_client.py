@@ -23,7 +23,7 @@ def test_openai_analyze_safe():
         "choices": [{"message": {"content": '{"unsafe": false, "reason": "none"}'}}]
     }
 
-    with patch("requests.post", return_value=mock_response):
+    with patch.object(client._session, "post", return_value=mock_response):
         is_unsafe, reason = client.analyze("Hello friend!")
 
     assert is_unsafe is False
@@ -40,7 +40,7 @@ def test_openai_analyze_unsafe():
         "choices": [{"message": {"content": '{"unsafe": true, "reason": "explicit content"}'}}]
     }
 
-    with patch("requests.post", return_value=mock_response):
+    with patch.object(client._session, "post", return_value=mock_response):
         is_unsafe, reason = client.analyze("Bad message")
 
     assert is_unsafe is True
@@ -51,6 +51,6 @@ def test_openai_analyze_timeout():
     config = Config.from_env()
     client = create_llm_client(config)
 
-    with patch("requests.post", side_effect=requests.Timeout()):
+    with patch.object(client._session, "post", side_effect=requests.Timeout()):
         with pytest.raises(requests.Timeout):
             client.analyze("Hello")
