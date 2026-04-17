@@ -9,7 +9,7 @@ def test_send_safety_alert_with_sender_name():
     mock_response = MagicMock()
     mock_response.status_code = 200
 
-    with patch("requests.post", return_value=mock_response) as mock_post:
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
         sender_info = {
             "sender_name": "John",
             "sender_phone": "+1234567890",
@@ -44,7 +44,7 @@ def test_send_safety_alert_without_sender_name():
     mock_response = MagicMock()
     mock_response.status_code = 200
 
-    with patch("requests.post", return_value=mock_response) as mock_post:
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
         sender_info = {
             "sender_name": None,
             "sender_phone": "+1234567890",
@@ -78,7 +78,7 @@ def test_send_unsafe_alert_group_message():
     mock_response = MagicMock()
     mock_response.status_code = 200
 
-    with patch("requests.post", return_value=mock_response) as mock_post:
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
         sender_info = {
             "sender_name": "Alice",
             "sender_phone": "+9876543210",
@@ -113,7 +113,7 @@ def test_send_unsafe_alert_group_no_sender_name():
     mock_response = MagicMock()
     mock_response.status_code = 200
 
-    with patch("requests.post", return_value=mock_response) as mock_post:
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
         sender_info = {
             "sender_name": None,
             "sender_phone": "+9876543210",
@@ -148,7 +148,7 @@ def test_send_failure_alert():
     mock_response = MagicMock()
     mock_response.status_code = 200
 
-    with patch("requests.post", return_value=mock_response) as mock_post:
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
         sender.send_failure_alert(
             timestamp="2025-03-13 14:30:00 UTC",
             failure_count=4
@@ -170,7 +170,7 @@ _Analysis will retry automatically._"""
 def test_send_message_retries():
     sender = TelegramSender("test-bot-token", "test-chat-id")
 
-    with patch("requests.post") as mock_post:
+    with patch.object(sender._session, "post") as mock_post:
         mock_post.side_effect = [
             Exception("timeout"),
             Exception("timeout"),

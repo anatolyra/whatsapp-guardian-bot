@@ -7,6 +7,7 @@ class TelegramSender:
     def __init__(self, bot_token: str, chat_id: str):
         self.bot_token = bot_token
         self.chat_id = chat_id
+        self._session = requests.Session()
 
     def send_safety_alert(
         self,
@@ -63,7 +64,7 @@ _Analysis will retry automatically._"""
 
         for attempt in range(3):
             try:
-                response = requests.post(
+                response = self._session.post(
                     url,
                     json={
                         "chat_id": self.chat_id,
