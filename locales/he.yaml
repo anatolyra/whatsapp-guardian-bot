@@ -1,0 +1,22 @@
+language: he
+native_name: עברית
+direction: rtl
+
+safety_alert:
+  title: "התראת שומר"
+  direction: "כיוון"
+  from: "מאת"
+  group: "קבוצה"
+  time: "זמן"
+  message: "הודעה"
+  reason: "סיבה"
+  from_private: "מספר פרטי"
+
+failure_alert:
+  title: "שומר - LLM לא זמין"
+  time: "זמן"
+  failed_analyses: "ניתוחים שנכשלו"
+  status: "שירות LLM אינו מגיב. הודעות אינן מנותחות."
+  retry_note: "_הניתוח ינסה שוב באופן אוטומטי._"
+
+llm_instruction: "Respond in Hebrew (עברית). All reason text must be written in Hebrew."

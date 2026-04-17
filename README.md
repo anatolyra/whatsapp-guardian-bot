@@ -160,6 +160,7 @@ The bot is now monitoring. Any message containing concerning content (bullying, 
 | `FAILURE_NOTIFY_ENABLED` | `true` | Enable failure notifications |
 | `FAILURE_NOTIFY_FIRST` | `true` | Send notification on first failure |
 | `FAILURE_NOTIFY_INTERVAL` | `3` | Send every N failures after first (0 = only first) |
+| `ALERT_LANGUAGE` | `en` | Output language for alerts and LLM responses: `en`, `he`, `ru` |
 
 ### Provider Defaults
 
@@ -186,6 +187,29 @@ python guardian.py
 docker build -t guardian-bot .
 docker run -p 5000:5000 --env-file .env guardian-bot
 ```
+
+## Output Language
+
+The bot supports multiple output languages for Telegram alerts and LLM analysis. Set the `ALERT_LANGUAGE` environment variable to a supported language code:
+
+| Code | Language | Direction |
+|------|----------|-----------|
+| `en` | English | LTR |
+| `he` | Hebrew | RTL |
+| `ru` | Russian | LTR |
+
+Invalid language codes cause the bot to fail at startup with a clear error message.
+
+### Adding a New Language
+
+1. Create a new YAML file in `locales/` named `{code}.yaml` (e.g., `locales/fr.yaml`)
+2. Copy the structure from `locales/en.yaml`
+3. Translate all string values
+4. Set `direction` to `ltr` or `rtl`
+5. Set `llm_instruction` to instruct the LLM to respond in that language
+6. Deploy with `ALERT_LANGUAGE={code}`
+
+No code changes are needed to add a new language.
 
 ## Security
 

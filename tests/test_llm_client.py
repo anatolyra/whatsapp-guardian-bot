@@ -99,3 +99,41 @@ def test_openai_analyze_timeout():
     with patch.object(client._session, "post", side_effect=requests.Timeout()):
         with pytest.raises(requests.Timeout):
             client.analyze("Hello")
+
+def test_openai_system_prompt_includes_llm_instruction():
+    from config import Config
+    config = Config.from_env()
+    client = create_llm_client(config, llm_instruction="Respond in Hebrew.")
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"unsafe": false, "reason": "none"}'}}]
+    }
+
+    with patch.object(client._session, "post", return_value=mock_response) as mock_post:
+        client.analyze("Hello friend!")
+
+    call_args = mock_post.call_args
+    messages = call_args[1]["json"]["messages"]
+    system_content = messages[0]["content"]
+    assert system_content.endswith("Respond in Hebrew.")
+
+def test_openai_system_prompt_without_llm_instruction():
+    from config import Config
+    config = Config.from_env()
+    client = create_llm_client(config)
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": '{"unsafe": false, "reason": "none"}'}}]
+    }
+
+    with patch.object(client._session, "post", return_value=mock_response) as mock_post:
+        client.analyze("Hello friend!")
+
+    call_args = mock_post.call_args
+    messages = call_args[1]["json"]["messages"]
+    system_content = messages[0]["content"]
+    assert "Respond in Hebrew" not in system_content

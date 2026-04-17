@@ -1,0 +1,22 @@
+language: en
+native_name: English
+direction: ltr
+
+safety_alert:
+  title: "Guardian Alert"
+  direction: "Direction"
+  from: "From"
+  group: "Group"
+  time: "Time"
+  message: "Message"
+  reason: "Reason"
+  from_private: "private number"
+
+failure_alert:
+  title: "Guardian - LLM Unavailable"
+  time: "Time"
+  failed_analyses: "Failed analyses"
+  status: "LLM service not responding. Messages are not being analyzed."
+  retry_note: "_Analysis will retry automatically._"
+
+llm_instruction: "Respond in English. All reason text must be written in English."

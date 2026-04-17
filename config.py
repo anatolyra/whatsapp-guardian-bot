@@ -35,6 +35,8 @@ class Config:
     failure_notify_first: bool
     failure_notify_interval: int
 
+    language: str
+
     @classmethod
     def from_env(cls) -> "Config":
         provider = os.environ.get("LLM_PROVIDER", "ollama").lower()
@@ -54,4 +56,5 @@ class Config:
             failure_notify_enabled=os.environ.get("FAILURE_NOTIFY_ENABLED", "true").lower() == "true",
             failure_notify_first=os.environ.get("FAILURE_NOTIFY_FIRST", "true").lower() == "true",
             failure_notify_interval=int(os.environ.get("FAILURE_NOTIFY_INTERVAL", "3")),
+            language=os.environ.get("ALERT_LANGUAGE", "en"),
         )
