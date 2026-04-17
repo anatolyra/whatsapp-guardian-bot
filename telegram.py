@@ -1,12 +1,38 @@
 import requests
 from typing import Optional, Dict
 
+_ENGLISH_LOCALE = {
+    "language": "en",
+    "native_name": "English",
+    "direction": "ltr",
+    "safety_alert": {
+        "title": "Guardian Alert",
+        "direction": "Direction",
+        "from": "From",
+        "group": "Group",
+        "time": "Time",
+        "message": "Message",
+        "reason": "Reason",
+        "from_private": "private number",
+    },
+    "failure_alert": {
+        "title": "Guardian - LLM Unavailable",
+        "time": "Time",
+        "failed_analyses": "Failed analyses",
+        "status": "LLM service not responding. Messages are not being analyzed.",
+        "retry_note": "_Analysis will retry automatically._",
+    },
+    "llm_instruction": "Respond in English. All reason text must be written in English.",
+}
+
+
 class TelegramSender:
     API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 
-    def __init__(self, bot_token: str, chat_id: str):
+    def __init__(self, bot_token: str, chat_id: str, locale: Optional[Dict] = None):
         self.bot_token = bot_token
         self.chat_id = chat_id
+        self.locale = locale or _ENGLISH_LOCALE
         self._session = requests.Session()
 
     def send_safety_alert(
@@ -17,35 +43,41 @@ class TelegramSender:
         message: str,
         reason: str,
     ) -> bool:
+        sa = self.locale["safety_alert"]
         sender_line = self._format_sender_line(sender_info)
         group_line = self._format_group_line(sender_info)
 
-        text = f"""🚨 *Guardian Alert* 🚨
+        text = f"""🚨 *{sa['title']}* 🚨
 
-*Direction:* {direction}
+*{sa['direction']}:* {direction}
 {sender_line}
-{group_line}*Time:* {timestamp}
-*Message:* {message}
-*Reason:* {reason}"""
+{group_line}*{sa['time']}:* {timestamp}
+*{sa['message']}:* {message}
+*{sa['reason']}:* {reason}"""
+
+        if self.locale.get("direction") == "rtl":
+            text = "\u200f" + text
 
         return self._send_message(text)
 
     def _format_sender_line(self, sender_info: Dict[str, Optional[str]]) -> str:
+        sa = self.locale["safety_alert"]
         sender_name = sender_info.get("sender_name")
         sender_phone = sender_info.get("sender_phone", "unknown")
 
         if sender_name and sender_phone != "unknown":
-            return f"*From:* {sender_name} ({sender_phone})"
+            return f"*{sa['from']}:* {sender_name} ({sender_phone})"
         if sender_name:
-            return f"*From:* {sender_name}"
+            return f"*{sa['from']}:* {sender_name}"
         if sender_phone != "unknown":
-            return f"*From:* {sender_phone}"
-        return "*From:* private number"
+            return f"*{sa['from']}:* {sender_phone}"
+        return f"*{sa['from']}:* {sa['from_private']}"
 
     def _format_group_line(self, sender_info: Dict[str, Optional[str]]) -> str:
+        sa = self.locale["safety_alert"]
         group_name = sender_info.get("group_name")
         if group_name:
-            return f"*Group:* {group_name}\n"
+            return f"*{sa['group']}:* {group_name}\n"
         return ""
 
     def send_failure_alert(
@@ -53,13 +85,17 @@ class TelegramSender:
         timestamp: str,
         failure_count: int,
     ) -> bool:
-        text = f"""⚠️ *Guardian - LLM Unavailable*
+        fa = self.locale["failure_alert"]
+        text = f"""⚠️ *{fa['title']}*
 
-*Time:* {timestamp}
-*Failed analyses:* {failure_count}
-*Status:* LLM service not responding. Messages are not being analyzed.
+*{fa['time']}:* {timestamp}
+*{fa['failed_analyses']}:* {failure_count}
+*{fa['status']}*
 
-_Analysis will retry automatically._"""
+{fa['retry_note']}"""
+
+        if self.locale.get("direction") == "rtl":
+            text = "\u200f" + text
 
         return self._send_message(text)
 
