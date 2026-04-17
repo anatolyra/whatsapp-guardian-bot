@@ -3,7 +3,7 @@ native_name: עברית
 direction: rtl
 
 safety_alert:
-  title: "התראת שומר"
+  title: "התראה"
   direction: "כיוון"
   from: "מאת"
   group: "קבוצה"
@@ -13,7 +13,7 @@ safety_alert:
   from_private: "מספר פרטי"
 
 failure_alert:
-  title: "שומר - LLM לא זמין"
+  title: "LLM לא זמין"
   time: "זמן"
   failed_analyses: "ניתוחים שנכשלו"
   status: "שירות LLM אינו מגיב. הודעות אינן מנותחות."

@@ -7,7 +7,7 @@ def test_load_locale_english():
     locale = load_locale("en")
     assert locale["language"] == "en"
     assert locale["direction"] == "ltr"
-    assert locale["safety_alert"]["title"] == "Guardian Alert"
+    assert locale["safety_alert"]["title"] == "Alert"
     assert locale["llm_instruction"] is not None
 
 
@@ -15,14 +15,14 @@ def test_load_locale_hebrew():
     locale = load_locale("he")
     assert locale["language"] == "he"
     assert locale["direction"] == "rtl"
-    assert locale["safety_alert"]["title"] == "התראת שומר"
+    assert locale["safety_alert"]["title"] == "התראה"
 
 
 def test_load_locale_russian():
     locale = load_locale("ru")
     assert locale["language"] == "ru"
     assert locale["direction"] == "ltr"
-    assert locale["safety_alert"]["title"] == "Оповещение Guardian"
+    assert locale["safety_alert"]["title"] == "Оповещение"
 
 
 def test_load_locale_unknown_raises():

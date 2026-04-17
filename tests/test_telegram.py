@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from telegram import TelegramSender
+from telegram import TelegramSender, BOT_NAME
 from i18n import load_locale
 
 
@@ -25,7 +25,9 @@ def test_send_safety_alert_with_sender_name():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+🚨 *Alert* 🚨
 
 *Direction:* incoming
 *From:* John (+1234567890)
@@ -60,7 +62,9 @@ def test_send_safety_alert_without_sender_name():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+🚨 *Alert* 🚨
 
 *Direction:* incoming
 *From:* +1234567890
@@ -94,7 +98,9 @@ def test_send_unsafe_alert_group_message():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+🚨 *Alert* 🚨
 
 *Direction:* incoming
 *From:* Alice (+9876543210)
@@ -129,7 +135,9 @@ def test_send_unsafe_alert_group_no_sender_name():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+🚨 *Alert* 🚨
 
 *Direction:* incoming
 *From:* +9876543210
@@ -155,7 +163,9 @@ def test_send_failure_alert():
             failure_count=4
         )
 
-    expected_text = """⚠️ *Guardian - LLM Unavailable*
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+⚠️ *LLM Unavailable*
 
 *Time:* 2025-03-13 14:30:00 UTC
 *Failed analyses:* 4
@@ -231,7 +241,9 @@ def test_send_safety_alert_group_unknown_phone():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
+    expected_text = f"""🤖 *{BOT_NAME}*
+
+🚨 *Alert* 🚨
 
 *Direction:* incoming
 *From:* Orit Rabinovich
@@ -261,16 +273,8 @@ def test_send_message_retries():
     assert mock_post.call_count == 3
 
 
-def _get_english_locale():
-    return load_locale("en")
-
-
-def _get_hebrew_locale():
-    return load_locale("he")
-
-
 def test_send_safety_alert_with_english_locale():
-    locale = _get_english_locale()
+    locale = load_locale("en")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
 
     mock_response = MagicMock()
@@ -291,20 +295,15 @@ def test_send_safety_alert_with_english_locale():
             reason="explicit content"
         )
 
-    expected_text = """🚨 *Guardian Alert* 🚨
-
-*Direction:* incoming
-*From:* John (+1234567890)
-*Time:* 2025-03-13 14:30:00 UTC
-*Message:* Test message
-*Reason:* explicit content"""
-
     call_args = mock_post.call_args
-    assert call_args[1]["json"]["text"] == expected_text
+    text = call_args[1]["json"]["text"]
+    assert text.startswith(f"🤖 *{BOT_NAME}*")
+    assert "🚨 *Alert* 🚨" in text
+    assert "*From:* John (+1234567890)" in text
 
 
 def test_send_safety_alert_with_hebrew_locale():
-    locale = _get_hebrew_locale()
+    locale = load_locale("he")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
 
     mock_response = MagicMock()
@@ -328,12 +327,13 @@ def test_send_safety_alert_with_hebrew_locale():
     call_args = mock_post.call_args
     text = call_args[1]["json"]["text"]
     assert text.startswith("\u200f")
-    assert "התראת שומר" in text
+    assert f"🤖 *{BOT_NAME}*" in text
+    assert "התראה" in text
     assert "מאת" in text
 
 
 def test_send_failure_alert_with_hebrew_locale():
-    locale = _get_hebrew_locale()
+    locale = load_locale("he")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
 
     mock_response = MagicMock()
@@ -348,11 +348,12 @@ def test_send_failure_alert_with_hebrew_locale():
     call_args = mock_post.call_args
     text = call_args[1]["json"]["text"]
     assert text.startswith("\u200f")
-    assert "שומר - LLM לא זמין" in text
+    assert f"🤖 *{BOT_NAME}*" in text
+    assert "LLM לא זמין" in text
 
 
 def test_format_sender_line_with_hebrew_locale():
-    locale = _get_hebrew_locale()
+    locale = load_locale("he")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
     result = sender._format_sender_line({
         "sender_name": "John",
@@ -364,7 +365,7 @@ def test_format_sender_line_with_hebrew_locale():
 
 
 def test_format_sender_line_private_number_with_hebrew_locale():
-    locale = _get_hebrew_locale()
+    locale = load_locale("he")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
     result = sender._format_sender_line({
         "sender_name": None,
@@ -376,7 +377,7 @@ def test_format_sender_line_private_number_with_hebrew_locale():
 
 
 def test_english_locale_no_rlm():
-    locale = _get_english_locale()
+    locale = load_locale("en")
     sender = TelegramSender("test-bot-token", "test-chat-id", locale=locale)
 
     mock_response = MagicMock()
@@ -400,3 +401,29 @@ def test_english_locale_no_rlm():
     call_args = mock_post.call_args
     text = call_args[1]["json"]["text"]
     assert not text.startswith("\u200f")
+
+
+def test_bot_name_in_all_alerts():
+    sender = TelegramSender("test-bot-token", "test-chat-id")
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+
+    with patch.object(sender._session, "post", return_value=mock_response) as mock_post:
+        sender_info = {
+            "sender_name": "John",
+            "sender_phone": "+1234567890",
+            "group_name": None,
+            "is_group": False
+        }
+        sender.send_safety_alert(
+            direction="incoming",
+            sender_info=sender_info,
+            timestamp="2025-03-13 14:30:00 UTC",
+            message="Test",
+            reason="test"
+        )
+
+    call_args = mock_post.call_args
+    text = call_args[1]["json"]["text"]
+    assert f"🤖 *{BOT_NAME}*" in text
