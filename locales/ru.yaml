@@ -1,0 +1,22 @@
+language: ru
+native_name: Русский
+direction: ltr
+
+safety_alert:
+  title: "Оповещение Guardian"
+  direction: "Направление"
+  from: "От"
+  group: "Группа"
+  time: "Время"
+  message: "Сообщение"
+  reason: "Причина"
+  from_private: "неизвестный номер"
+
+failure_alert:
+  title: "Guardian - LLM недоступен"
+  time: "Время"
+  failed_analyses: "Неудачных анализов"
+  status: "Сервис LLM не отвечает. Сообщения не анализируются."
+  retry_note: "_Анализ будет повторён автоматически._"
+
+llm_instruction: "Respond in Russian (Русский). All reason text must be written in Russian."
