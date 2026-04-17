@@ -209,6 +209,8 @@ __marimo__/
 # Project docs (plans, specs)
 docs/
 .claude/
+.planning/
+.opencode/
 CLAUDE.md
 GEMINI.md
 AGENTS.md
