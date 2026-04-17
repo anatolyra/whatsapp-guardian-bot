@@ -8,6 +8,7 @@ from config import Config
 from llm_client import create_llm_client
 from failure_tracker import FailureTracker
 from telegram import TelegramSender
+from i18n import load_locale
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,12 +18,13 @@ SEEN_MESSAGES_MAX = 1000
 app = Flask(__name__)
 
 config = Config.from_env()
-llm_client = create_llm_client(config)
+locale = load_locale(config.language)
+llm_client = create_llm_client(config, llm_instruction=locale["llm_instruction"])
 failure_tracker = FailureTracker(
     notify_first=config.failure_notify_first,
     notify_interval=config.failure_notify_interval,
 )
-telegram = TelegramSender(config.telegram_bot_token, config.telegram_chat_id) if config.telegram_bot_token and config.telegram_chat_id else None
+telegram = TelegramSender(config.telegram_bot_token, config.telegram_chat_id, locale=locale) if config.telegram_bot_token and config.telegram_chat_id else None
 _seen_messages: OrderedDict[str, None] = OrderedDict()
 
 
