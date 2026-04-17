@@ -349,7 +349,7 @@ def test_webhook_incoming_message(client):
                 "fromMe": False,
                 "timestamp": 1710337200,
                 "_data": {
-                    "pushName": "John"
+                    "notifyName": "John"
                 }
             }
         })
@@ -374,14 +374,14 @@ def test_webhook_unsafe_message_sends_telegram(client):
                 "fromMe": False,
                 "timestamp": 1710337200,
                 "_data": {
-                    "pushName": "John"
+                    "notifyName": "John"
                 }
             }
         })
 
         assert response.status_code == 200
         mock_telegram.send_safety_alert.assert_called_once()
-        
+
         call_args = mock_telegram.send_safety_alert.call_args
         sender_info = call_args[1]["sender_info"]
         assert sender_info["sender_name"] == "John"

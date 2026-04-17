@@ -83,16 +83,11 @@ def webhook():
     if payload_data.get("type") in ("e2e_notification", "notification_template"):
         return jsonify({"status": "ignored"}), 200
 
-    logger.info(f"DEBUG: Full webhook payload: {payload}")
-    logger.info(f"DEBUG: payload['_data']: {payload.get('_data', {})}")
-
     message_text = payload.get("body", "")
     from_me = payload.get("fromMe", False)
     direction = "outgoing" if from_me else "incoming"
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     sender_info = extract_sender_info(payload)
-    
-    logger.info(f"DEBUG: Extracted sender_info: {sender_info}")
 
     try:
         is_unsafe, reason = llm_client.analyze(message_text)
