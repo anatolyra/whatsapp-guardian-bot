@@ -6,10 +6,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY config.py .
+COPY i18n.py .
 COPY llm_client.py .
 COPY failure_tracker.py .
 COPY telegram.py .
 COPY guardian.py .
+COPY locales/ locales/
 
 EXPOSE 5000
 
