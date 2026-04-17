@@ -1,4 +1,6 @@
+import hashlib
 import logging
+from collections import OrderedDict
 from typing import Optional, Dict
 from flask import Flask, request, jsonify
 from datetime import datetime, timezone
@@ -10,6 +12,8 @@ from telegram import TelegramSender
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+SEEN_MESSAGES_MAX = 1000
+
 app = Flask(__name__)
 
 config = Config.from_env()
@@ -19,6 +23,7 @@ failure_tracker = FailureTracker(
     notify_interval=config.failure_notify_interval,
 )
 telegram = TelegramSender(config.telegram_bot_token, config.telegram_chat_id) if config.telegram_bot_token and config.telegram_chat_id else None
+_seen_messages: OrderedDict[str, None] = OrderedDict()
 
 
 def extract_sender_info(payload: dict) -> Dict[str, Optional[str]]:
@@ -70,6 +75,18 @@ def _extract_phone(sender_id: Optional[str]) -> str:
     return f"+{local_part}"
 
 
+def _make_dedup_key(payload: dict) -> str:
+    msg_id = payload.get("id", "")
+    if msg_id:
+        return msg_id
+
+    sender = payload.get("from", "") or ""
+    body = payload.get("body", "") or ""
+    timestamp = payload.get("timestamp", "") or ""
+    raw = f"{sender}:{body}:{timestamp}"
+    return hashlib.md5(raw.encode()).hexdigest()
+
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
@@ -82,6 +99,15 @@ def webhook():
 
     if payload_data.get("type") in ("e2e_notification", "notification_template"):
         return jsonify({"status": "ignored"}), 200
+
+    dedup_key = _make_dedup_key(payload)
+    if dedup_key in _seen_messages:
+        logger.info(f"Duplicate message ignored: {dedup_key[:16]}...")
+        return jsonify({"status": "duplicate"}), 200
+
+    _seen_messages[dedup_key] = None
+    while len(_seen_messages) > SEEN_MESSAGES_MAX:
+        _seen_messages.popitem(last=False)
 
     message_text = payload.get("body", "")
     from_me = payload.get("fromMe", False)
