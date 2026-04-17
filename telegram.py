@@ -34,9 +34,13 @@ class TelegramSender:
         sender_name = sender_info.get("sender_name")
         sender_phone = sender_info.get("sender_phone", "unknown")
 
-        if sender_name:
+        if sender_name and sender_phone != "unknown":
             return f"*From:* {sender_name} ({sender_phone})"
-        return f"*From:* {sender_phone}"
+        if sender_name:
+            return f"*From:* {sender_name}"
+        if sender_phone != "unknown":
+            return f"*From:* {sender_phone}"
+        return "*From:* private number"
 
     def _format_group_line(self, sender_info: Dict[str, Optional[str]]) -> str:
         group_name = sender_info.get("group_name")
