@@ -53,3 +53,23 @@ def test_unknown_provider_raises():
         from config import Config
         with pytest.raises(ValueError, match="Unknown LLM_PROVIDER"):
             Config.from_env()
+
+def test_default_language_is_english():
+    with patch.dict(os.environ, {}, clear=True):
+        from config import Config
+        config = Config.from_env()
+        assert config.language == "en"
+
+def test_language_from_env():
+    with patch.dict(os.environ, {"ALERT_LANGUAGE": "he"}, clear=True):
+        from config import Config
+        config = Config.from_env()
+        assert config.language == "he"
+
+def test_unknown_language_raises_at_load():
+    with patch.dict(os.environ, {"ALERT_LANGUAGE": "zz"}, clear=True):
+        from config import Config
+        from i18n import load_locale
+        config = Config.from_env()
+        with pytest.raises(ValueError, match="Unknown language code: zz"):
+            load_locale(config.language)
