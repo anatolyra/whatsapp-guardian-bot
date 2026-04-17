@@ -22,24 +22,24 @@ telegram = TelegramSender(config.telegram_bot_token, config.telegram_chat_id) if
 
 
 def extract_sender_info(payload: dict) -> Dict[str, Optional[str]]:
-    """
-    Extract sender information from WAHA webhook payload.
-
-    Args:
-        payload: The webhook payload dict from WAHA
-
-    Returns:
-        Dict with sender_name, sender_phone, group_name, and is_group fields
-    """
     data = payload.get("_data", {}) or {}
     from_id = payload.get("from", "") or ""
+    to_id = payload.get("to", "") or ""
 
-    is_group = from_id.endswith("@g.us")
-    sender_id = payload.get("participant") if is_group else from_id
+    is_group = from_id.endswith("@g.us") or to_id.endswith("@g.us")
+
+    if is_group:
+        group_jid = from_id if from_id.endswith("@g.us") else to_id
+        group_name = group_jid.split("@")[0]
+        sender_id = payload.get("participant")
+    else:
+        group_name = None
+        sender_id = from_id
+
     sender_phone = _extract_phone(sender_id)
 
+    notify_name = data.get("notifyName")
     push_name = data.get("pushName")
-    notify_name = data.get("notify")
 
     if push_name and push_name != "~":
         sender_name = push_name
@@ -47,11 +47,6 @@ def extract_sender_info(payload: dict) -> Dict[str, Optional[str]]:
         sender_name = notify_name
     else:
         sender_name = None
-
-    group_name = None
-    if is_group:
-        metadata = data.get("metadata", {}) or {}
-        group_name = metadata.get("subject") or data.get("subject")
 
     return {
         "sender_name": sender_name,

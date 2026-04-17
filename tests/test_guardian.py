@@ -50,9 +50,7 @@ def test_extract_sender_info_group_with_names():
         "body": "Hello group!",
         "_data": {
             "pushName": "Alice",
-            "metadata": {
-                "subject": "Family Chat"
-            }
+            "notifyName": "Alice"
         }
     }
 
@@ -60,7 +58,7 @@ def test_extract_sender_info_group_with_names():
 
     assert result["sender_name"] == "Alice"
     assert result["sender_phone"] == "+9876543210"
-    assert result["group_name"] == "Family Chat"
+    assert result["group_name"] == "123456789"
     assert result["is_group"] is True
 
 
@@ -78,7 +76,7 @@ def test_extract_sender_info_group_no_names():
 
     assert result["sender_name"] is None
     assert result["sender_phone"] == "+9876543210"
-    assert result["group_name"] is None
+    assert result["group_name"] == "123456789"
     assert result["is_group"] is True
 
 
@@ -106,7 +104,7 @@ def test_extract_sender_info_notify_fallback():
         "body": "Hello!",
         "_data": {
             "pushName": "~",
-            "notify": "Jane"
+            "notifyName": "Jane"
         }
     }
 
@@ -129,7 +127,7 @@ def test_extract_sender_info_lid_format():
     result = extract_sender_info(payload)
 
     assert result["sender_name"] == "John"
-    assert result["sender_phone"] == "+1234567890"
+    assert result["sender_phone"] == "unknown"
 
 
 def test_extract_sender_info_empty_from():
@@ -171,7 +169,7 @@ def test_extract_sender_info_group_subject_fallback():
         "body": "Hello group!",
         "_data": {
             "pushName": "Alice",
-            "subject": "Work Group"
+            "notifyName": "Alice"
         }
     }
 
@@ -179,7 +177,7 @@ def test_extract_sender_info_group_subject_fallback():
 
     assert result["sender_name"] == "Alice"
     assert result["sender_phone"] == "+9876543210"
-    assert result["group_name"] == "Work Group"
+    assert result["group_name"] == "123456789"
 
 
 def test_extract_sender_info_group_without_participant():
@@ -188,16 +186,14 @@ def test_extract_sender_info_group_without_participant():
     payload = {
         "from": "123456789@g.us",
         "body": "Hello group!",
-        "_data": {
-            "subject": "Family Chat"
-        }
+        "_data": {}
     }
 
     result = extract_sender_info(payload)
 
     assert result["sender_name"] is None
     assert result["sender_phone"] == "unknown"
-    assert result["group_name"] == "Family Chat"
+    assert result["group_name"] == "123456789"
 
 
 def test_extract_sender_info_none_data():
@@ -234,6 +230,108 @@ def test_extract_phone_none():
 def test_extract_phone_empty():
     from guardian import _extract_phone
     assert _extract_phone("") == "unknown"
+
+
+def test_extract_sender_info_1to1_outgoing():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "972544410021@c.us",
+        "fromMe": True,
+        "to": "972544410021@c.us",
+        "participant": "out@c.us",
+        "body": "test",
+        "_data": {"notifyName": "Anatoly Rabinovich"}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] == "Anatoly Rabinovich"
+    assert result["sender_phone"] == "+972544410021"
+    assert result["group_name"] is None
+    assert result["is_group"] is False
+
+def test_extract_sender_info_group_outgoing():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "97444268384452@lid",
+        "fromMe": True,
+        "to": "120363409183223818@g.us",
+        "participant": "97444268384452@lid",
+        "body": "test",
+        "_data": {"notifyName": "Anatoly Rabinovich"}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] == "Anatoly Rabinovich"
+    assert result["sender_phone"] == "unknown"
+    assert result["is_group"] is True
+    assert result["group_name"] == "120363409183223818"
+
+def test_extract_sender_info_group_incoming():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "120363409183223818@g.us",
+        "fromMe": False,
+        "to": "972544410021@c.us",
+        "participant": "41966276448256@lid",
+        "body": "test",
+        "_data": {"notifyName": "Orit Rabinovich"}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] == "Orit Rabinovich"
+    assert result["sender_phone"] == "unknown"
+    assert result["is_group"] is True
+    assert result["group_name"] == "120363409183223818"
+
+def test_extract_sender_info_1to1_incoming():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "972544410021@c.us",
+        "fromMe": False,
+        "to": "972555512345@c.us",
+        "body": "test",
+        "_data": {"notifyName": "Anatoly Rabinovich"}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] == "Anatoly Rabinovich"
+    assert result["sender_phone"] == "+972544410021"
+    assert result["group_name"] is None
+    assert result["is_group"] is False
+
+def test_extract_sender_info_notify_name_fallback():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "1234567890@c.us",
+        "body": "Hello!",
+        "_data": {"notifyName": "Jane"}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] == "Jane"
+
+def test_extract_sender_info_no_name():
+    from guardian import extract_sender_info
+
+    payload = {
+        "from": "1234567890@c.us",
+        "body": "Hello!",
+        "_data": {}
+    }
+
+    result = extract_sender_info(payload)
+
+    assert result["sender_name"] is None
 
 
 def test_webhook_incoming_message(client):
