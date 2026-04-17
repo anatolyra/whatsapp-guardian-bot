@@ -215,6 +215,27 @@ def test_extract_sender_info_none_data():
     assert result["sender_phone"] == "+1234567890"
 
 
+def test_extract_phone_from_cus():
+    from guardian import _extract_phone
+    assert _extract_phone("972544410021@c.us") == "+972544410021"
+
+def test_extract_phone_from_lid_returns_unknown():
+    from guardian import _extract_phone
+    assert _extract_phone("97444268384452@lid") == "unknown"
+
+def test_extract_phone_from_out_cus():
+    from guardian import _extract_phone
+    assert _extract_phone("out@c.us") == "unknown"
+
+def test_extract_phone_none():
+    from guardian import _extract_phone
+    assert _extract_phone(None) == "unknown"
+
+def test_extract_phone_empty():
+    from guardian import _extract_phone
+    assert _extract_phone("") == "unknown"
+
+
 def test_webhook_incoming_message(client):
     with patch("guardian.llm_client") as mock_llm, \
          patch("guardian.telegram") as mock_telegram, \

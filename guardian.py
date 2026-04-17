@@ -62,23 +62,17 @@ def extract_sender_info(payload: dict) -> Dict[str, Optional[str]]:
 
 
 def _extract_phone(sender_id: Optional[str]) -> str:
-    """
-    Extract phone number from WhatsApp ID format.
-
-    Args:
-        sender_id: WhatsApp ID in format '1234567890@c.us' or '1234567890@lid'
-
-    Returns:
-        Phone number with + prefix, or 'unknown' if invalid
-    """
-    if not sender_id or sender_id == "unknown":
+    if not sender_id or sender_id == "unknown" or sender_id == "out@c.us":
         return "unknown"
-    
-    phone = sender_id.split("@")[0]
-    if not phone:
+
+    local_part, _, suffix = sender_id.partition("@")
+    if not local_part:
         return "unknown"
-    
-    return f"+{phone}"
+
+    if suffix == "lid":
+        return "unknown"
+
+    return f"+{local_part}"
 
 
 @app.route("/webhook", methods=["POST"])
@@ -89,11 +83,17 @@ def webhook():
         return jsonify({"status": "ignored"}), 200
 
     payload = data["payload"]
+    
+    logger.info(f"DEBUG: Full webhook payload: {payload}")
+    logger.info(f"DEBUG: payload['_data']: {payload.get('_data', {})}")
+    
     message_text = payload.get("body", "")
     from_me = payload.get("fromMe", False)
     direction = "outgoing" if from_me else "incoming"
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     sender_info = extract_sender_info(payload)
+    
+    logger.info(f"DEBUG: Extracted sender_info: {sender_info}")
 
     try:
         is_unsafe, reason = llm_client.analyze(message_text)
