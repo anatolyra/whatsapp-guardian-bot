@@ -19,11 +19,12 @@ class OpenAICompatibleClient(LLMClient):
 Respond ONLY with valid JSON: {"unsafe": true/false, "reason": "short explanation"}.
 If safe, return {"unsafe": false, "reason": "none"}."""
 
-    def __init__(self, base_url: str, api_key: Optional[str], model: str, provider: str = "openai-compatible"):
+    def __init__(self, base_url: str, api_key: Optional[str], model: str, provider: str = "openai-compatible", llm_instruction: Optional[str] = None):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self.provider = provider
+        self.system_prompt = f"{self.SYSTEM_PROMPT}\n\n{llm_instruction}" if llm_instruction else self.SYSTEM_PROMPT
         self._session = requests.Session()
         self._session.headers["Content-Type"] = "application/json"
         if api_key:
@@ -33,7 +34,7 @@ If safe, return {"unsafe": false, "reason": "none"}."""
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": text},
             ],
             "response_format": {"type": "json_object"},
@@ -63,11 +64,12 @@ class GoogleClient(LLMClient):
 Respond ONLY with valid JSON: {"unsafe": true/false, "reason": "short explanation"}.
 If safe, return {"unsafe": false, "reason": "none"}."""
 
-    def __init__(self, api_key: str, model: str):
+    def __init__(self, api_key: str, model: str, llm_instruction: Optional[str] = None):
         from google import genai
         self.api_key = api_key
         self.model = model
         self.provider = "google"
+        self.system_prompt = f"{self.SYSTEM_PROMPT}\n\n{llm_instruction}" if llm_instruction else self.SYSTEM_PROMPT
         self._client = genai.Client(api_key=api_key)
 
     def analyze(self, text: str) -> Tuple[bool, str]:
@@ -77,7 +79,7 @@ If safe, return {"unsafe": false, "reason": "none"}."""
             model=self.model,
             contents=text,
             config=types.GenerateContentConfig(
-                system_instruction=self.SYSTEM_PROMPT,
+                system_instruction=self.system_prompt,
                 response_mime_type="application/json",
                 temperature=0.0,
             ),
@@ -86,10 +88,10 @@ If safe, return {"unsafe": false, "reason": "none"}."""
         result = json.loads(response.text)
         return result.get("unsafe", False), result.get("reason", "Unknown")
 
-def create_llm_client(config: Config) -> LLMClient:
+def create_llm_client(config: Config, llm_instruction: Optional[str] = None) -> LLMClient:
     if config.provider == "google":
         if not config.api_key:
             raise ValueError("LLM_API_KEY is required for Google provider")
-        return GoogleClient(config.api_key, config.model)
+        return GoogleClient(config.api_key, config.model, llm_instruction=llm_instruction)
     else:
-        return OpenAICompatibleClient(config.base_url, config.api_key, config.model, config.provider)
+        return OpenAICompatibleClient(config.base_url, config.api_key, config.model, config.provider, llm_instruction=llm_instruction)
