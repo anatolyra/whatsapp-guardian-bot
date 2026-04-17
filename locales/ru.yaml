@@ -3,7 +3,7 @@ native_name: Русский
 direction: ltr
 
 safety_alert:
-  title: "Оповещение Guardian"
+  title: "Оповещение"
   direction: "Направление"
   from: "От"
   group: "Группа"
@@ -13,7 +13,7 @@ safety_alert:
   from_private: "неизвестный номер"
 
 failure_alert:
-  title: "Guardian - LLM недоступен"
+  title: "LLM недоступен"
   time: "Время"
   failed_analyses: "Неудачных анализов"
   status: "Сервис LLM не отвечает. Сообщения не анализируются."

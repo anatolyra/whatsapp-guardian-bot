@@ -1,12 +1,14 @@
 import requests
 from typing import Optional, Dict
 
+BOT_NAME = "Guardian Bot"
+
 _ENGLISH_LOCALE = {
     "language": "en",
     "native_name": "English",
     "direction": "ltr",
     "safety_alert": {
-        "title": "Guardian Alert",
+        "title": "Alert",
         "direction": "Direction",
         "from": "From",
         "group": "Group",
@@ -16,7 +18,7 @@ _ENGLISH_LOCALE = {
         "from_private": "private number",
     },
     "failure_alert": {
-        "title": "Guardian - LLM Unavailable",
+        "title": "LLM Unavailable",
         "time": "Time",
         "failed_analyses": "Failed analyses",
         "status": "LLM service not responding. Messages are not being analyzed.",
@@ -47,7 +49,9 @@ class TelegramSender:
         sender_line = self._format_sender_line(sender_info)
         group_line = self._format_group_line(sender_info)
 
-        text = f"""🚨 *{sa['title']}* 🚨
+        text = f"""🤖 *{BOT_NAME}*
+
+🚨 *{sa['title']}* 🚨
 
 *{sa['direction']}:* {direction}
 {sender_line}
@@ -86,7 +90,9 @@ class TelegramSender:
         failure_count: int,
     ) -> bool:
         fa = self.locale["failure_alert"]
-        text = f"""⚠️ *{fa['title']}*
+        text = f"""🤖 *{BOT_NAME}*
+
+⚠️ *{fa['title']}*
 
 *{fa['time']}:* {timestamp}
 *{fa['failed_analyses']}:* {failure_count}
