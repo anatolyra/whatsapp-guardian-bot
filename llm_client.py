@@ -65,23 +65,20 @@ Respond ONLY with valid JSON: {"unsafe": true/false, "reason": "short explanatio
 If safe, return {"unsafe": false, "reason": "none"}."""
 
     def __init__(self, api_key: str, model: str):
-        import google.generativeai as genai
+        from google import genai
         self.api_key = api_key
         self.model = model
         self.provider = "google"
-        genai.configure(api_key=api_key)
+        self._client = genai.Client(api_key=api_key)
 
     def analyze(self, text: str) -> Tuple[bool, str]:
-        import google.generativeai as genai
+        from google.genai import types
 
-        model = genai.GenerativeModel(
-            self.model,
-            system_instruction=self.SYSTEM_PROMPT,
-        )
-
-        response = model.generate_content(
-            text,
-            generation_config=genai.GenerationConfig(
+        response = self._client.models.generate_content(
+            model=self.model,
+            contents=text,
+            config=types.GenerateContentConfig(
+                system_instruction=self.SYSTEM_PROMPT,
                 response_mime_type="application/json",
                 temperature=0.0,
             ),
@@ -93,7 +90,7 @@ If safe, return {"unsafe": false, "reason": "none"}."""
 def create_llm_client(config: Config) -> LLMClient:
     if config.provider == "google":
         if not config.api_key:
-            raise ValueError("GOOGLE_API_KEY is required for Google provider")
+            raise ValueError("LLM_API_KEY is required for Google provider")
         return GoogleClient(config.api_key, config.model)
     else:
         return OpenAICompatibleClient(config.base_url, config.api_key, config.model, config.provider)
