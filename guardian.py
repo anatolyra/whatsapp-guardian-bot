@@ -78,10 +78,14 @@ def webhook():
         return jsonify({"status": "ignored"}), 200
 
     payload = data["payload"]
-    
+    payload_data = payload.get("_data", {}) or {}
+
+    if payload_data.get("type") in ("e2e_notification", "notification_template"):
+        return jsonify({"status": "ignored"}), 200
+
     logger.info(f"DEBUG: Full webhook payload: {payload}")
     logger.info(f"DEBUG: payload['_data']: {payload.get('_data', {})}")
-    
+
     message_text = payload.get("body", "")
     from_me = payload.get("fromMe", False)
     direction = "outgoing" if from_me else "incoming"

@@ -414,6 +414,27 @@ def test_webhook_llm_failure_sends_alert_on_first(client):
         mock_telegram.send_failure_alert.assert_called_once()
 
 
+def test_webhook_skips_e2e_notification(client):
+    with patch("guardian.llm_client") as mock_llm, \
+         patch("guardian.telegram") as mock_telegram, \
+         patch("guardian.failure_tracker") as mock_tracker:
+
+        response = client.post("/webhook", json={
+            "event": "message.any",
+            "payload": {
+                "from": "120363409183223818@g.us",
+                "fromMe": False,
+                "body": "",
+                "to": "972544410021@c.us",
+                "_data": {"type": "e2e_notification", "subtype": "encrypt"}
+            }
+        })
+
+        assert response.status_code == 200
+        assert response.json["status"] == "ignored"
+        mock_llm.analyze.assert_not_called()
+
+
 def test_health_endpoint(client):
     response = client.get("/health")
     assert response.status_code == 200
