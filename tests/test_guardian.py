@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
+import guardian
 
 
 def test_extract_sender_info_direct_with_name():
@@ -433,6 +434,78 @@ def test_webhook_skips_e2e_notification(client):
         assert response.status_code == 200
         assert response.json["status"] == "ignored"
         mock_llm.analyze.assert_not_called()
+
+
+def test_webhook_deduplication_skips_duplicate(client):
+    with patch("guardian.llm_client") as mock_llm, \
+         patch("guardian.telegram") as mock_telegram, \
+         patch("guardian.failure_tracker") as mock_tracker:
+
+        guardian._seen_messages.clear()
+        mock_llm.analyze.return_value = (True, "explicit content")
+
+        payload = {
+            "from": "1234567890@c.us",
+            "body": "duplicate message",
+            "fromMe": False,
+            "timestamp": 1710337200,
+            "id": "msg_abc123",
+            "_data": {"notifyName": "John"}
+        }
+
+        response = client.post("/webhook", json={
+            "event": "message.any",
+            "payload": payload
+        })
+        assert response.status_code == 200
+
+        response = client.post("/webhook", json={
+            "event": "message.any",
+            "payload": payload
+        })
+        assert response.status_code == 200
+        assert response.json["status"] == "duplicate"
+
+        mock_llm.analyze.assert_called_once()
+        mock_telegram.send_safety_alert.assert_called_once()
+
+
+def test_webhook_dedup_different_messages_processed(client):
+    with patch("guardian.llm_client") as mock_llm, \
+         patch("guardian.telegram") as mock_telegram, \
+         patch("guardian.failure_tracker") as mock_tracker:
+
+        guardian._seen_messages.clear()
+        mock_llm.analyze.return_value = (False, "none")
+
+        response = client.post("/webhook", json={
+            "event": "message.any",
+            "payload": {
+                "from": "1234567890@c.us",
+                "body": "first message",
+                "fromMe": False,
+                "timestamp": 1710337200,
+                "id": "msg_001",
+                "_data": {}
+            }
+        })
+        assert response.status_code == 200
+
+        response = client.post("/webhook", json={
+            "event": "message.any",
+            "payload": {
+                "from": "1234567890@c.us",
+                "body": "second message",
+                "fromMe": False,
+                "timestamp": 1710337201,
+                "id": "msg_002",
+                "_data": {}
+            }
+        })
+        assert response.status_code == 200
+        assert response.json["status"] == "processed"
+
+        assert mock_llm.analyze.call_count == 2
 
 
 def test_health_endpoint(client):
